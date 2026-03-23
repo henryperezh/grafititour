@@ -1,192 +1,667 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Graffiti Tour Vijes</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-body { margin:0; font-family:Arial; overflow:hidden; }
-#mapa { height:100vh; }
-.leaflet-routing-container { display:none !important; }
+  :root {
+    --magenta:#FF2D78; --cyan:#00C8E0; --lime:#AAFF00;
+    --orange:#FF7A00; --violet:#7C3AFF;
+    --bg:#F0EDFF; --white:#FFFFFF; --dark:#1A0533;
+    --muted:#6B5F8A; --border:#DDD6F5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);font-size:17px;min-height:100vh;}
 
-.sheet {
-  position:absolute;
-  bottom:0;
-  width:100%;
-  height:150px;
-  background:white;
-  border-radius:20px 20px 0 0;
-  box-shadow:0 -5px 20px rgba(0,0,0,0.3);
-  z-index:9999;
-}
+  /* ── BIENVENIDA ── */
+  #pantalla-bienvenida{min-height:100vh;background:var(--dark);display:flex;flex-direction:column;overflow-y:auto;}
+  .bienvenida-stripe{height:6px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime),var(--cyan),var(--violet));background-size:200%;animation:sa 4s linear infinite;flex-shrink:0;}
+  @keyframes sa{to{background-position:200% 0;}}
+  .bienvenida-hero{background:linear-gradient(160deg,#2D0A5A 0%,#1A0533 60%);padding:36px 24px 28px;text-align:center;flex-shrink:0;}
+  .bienvenida-logo{font-family:'Righteous',sans-serif;font-size:3.2rem;line-height:1;color:#fff;margin-bottom:6px;}
+  .bienvenida-logo .mg{color:var(--magenta);} .bienvenida-logo .cy{color:var(--cyan);}
+  .bienvenida-subtitulo{font-family:'Righteous',sans-serif;font-size:1rem;color:rgba(255,255,255,.5);letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;}
+  .bienvenida-tag{display:inline-block;background:var(--lime);color:var(--dark);font-size:.72rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px;}
+  .bienvenida-duracion{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:6px 16px;font-size:.85rem;font-weight:600;color:rgba(255,255,255,.7);}
+  .bienvenida-cuerpo{flex:1;padding:0 20px 24px;}
+  .bienvenida-seccion{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:20px;margin-bottom:14px;}
+  .bienvenida-seccion-titulo{font-family:'Righteous',sans-serif;font-size:1rem;color:var(--lime);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .bienvenida-texto{font-size:.97rem;color:rgba(255,255,255,.75);line-height:1.75;}
+  .bienvenida-texto p{margin-bottom:10px;} .bienvenida-texto p:last-child{margin-bottom:0;}
+  .piedras{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .piedra-item{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px;}
+  .piedra-icon{font-size:1.3rem;flex-shrink:0;}
+  .piedra-texto{font-size:.9rem;color:rgba(255,255,255,.7);line-height:1.5;}
+  .piedra-nombre{font-weight:800;color:var(--cyan);display:block;margin-bottom:2px;}
+  .murales-lista{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .mural-item-bienvenida{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:10px;}
+  .mural-num-bienvenida{font-family:'Righteous',sans-serif;font-size:1rem;color:var(--magenta);min-width:28px;}
+  .mural-nombre-bienvenida{font-size:.9rem;color:rgba(255,255,255,.7);font-weight:600;}
+  .btn-iniciar-wrap{padding:0 20px 36px;flex-shrink:0;}
+  .btn-iniciar{width:100%;padding:18px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--magenta),var(--orange));color:#fff;font-family:'Righteous',sans-serif;font-size:1.3rem;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 24px rgba(255,45,120,.4);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:10px;}
+  .btn-iniciar:active{transform:scale(.97);}
 
-.handle {
-  width:40px;
-  height:5px;
-  background:#ccc;
-  border-radius:10px;
-  margin:10px auto;
-}
+  /* ── APP ── */
+  #app{display:none;}
+  header{background:var(--dark);position:sticky;top:0;z-index:200;}
+  .stripe{height:5px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime),var(--cyan),var(--violet));background-size:200%;animation:sa 4s linear infinite;}
+  .hi{padding:14px 18px 12px;}
+  .ht{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  h1{font-family:'Righteous',sans-serif;font-size:2rem;line-height:1;color:#fff;}
+  h1 .mg{color:var(--magenta);} h1 .cy{color:var(--cyan);}
+  .tag{background:var(--lime);color:var(--dark);font-size:.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;}
+  .pr{display:flex;align-items:center;gap:10px;}
+  .pl{font-size:.8rem;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap;}
+  .pt{flex:1;height:7px;background:rgba(255,255,255,.12);border-radius:10px;overflow:hidden;}
+  .pf{height:100%;width:0%;border-radius:10px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime));transition:width .6s cubic-bezier(.22,1,.36,1);}
+  .pn{font-size:.8rem;font-weight:800;color:var(--lime);min-width:34px;text-align:right;}
+  .gps{display:flex;align-items:center;gap:9px;margin:12px 16px 0;padding:10px 16px;background:var(--white);border:2px solid var(--border);border-radius:14px;font-size:.95rem;font-weight:600;color:var(--muted);}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s;}
+  .dot.on{background:#00C853;animation:blink 1.4s infinite;}
+  .dot.err{background:var(--magenta);}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .voz-banner{display:none;align-items:center;gap:10px;margin:10px 16px 0;padding:12px 16px;background:linear-gradient(135deg,var(--violet),var(--magenta));border-radius:14px;color:#fff;font-size:.9rem;font-weight:700;}
+  .voz-banner.activo{display:flex;}
+  .voz-onda{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+  .voz-onda span{display:block;width:4px;background:var(--lime);border-radius:4px;animation:onda 1s ease-in-out infinite;}
+  .voz-onda span:nth-child(1){height:8px;animation-delay:0s} .voz-onda span:nth-child(2){height:16px;animation-delay:.15s}
+  .voz-onda span:nth-child(3){height:22px;animation-delay:.3s} .voz-onda span:nth-child(4){height:16px;animation-delay:.45s}
+  .voz-onda span:nth-child(5){height:8px;animation-delay:.6s}
+  @keyframes onda{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+  .voz-txt{flex:1;line-height:1.4;}
+  .btn-parar{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;}
+  main{padding:12px 16px 110px;}
+  .sk-wrap{background:var(--white);border-radius:20px;padding:24px;border:2px solid var(--border);margin-bottom:14px;}
+  .sk{height:14px;border-radius:8px;background:var(--bg);margin-bottom:12px;animation:pulse 1.6s ease-in-out infinite;}
+  .sk.s{width:35%}.sk.m{width:60%;height:22px}.sk.l{width:100%}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 
-.content { padding:10px; }
+  /* CARD MURAL */
+  .card{background:var(--white);border-radius:22px;overflow:hidden;border:2px solid var(--border);box-shadow:0 6px 28px rgba(124,58,255,.10);margin-bottom:14px;animation:popIn .4s cubic-bezier(.22,1,.36,1);}
+  @keyframes popIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+  .card-foto{width:100%;height:200px;object-fit:cover;display:block;background:var(--bg);}
+  .card-head{background:linear-gradient(135deg,var(--violet),var(--magenta));padding:14px 20px 12px;position:relative;overflow:hidden;}
+  .card-head::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07);}
+  .card-num{font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--lime);margin-bottom:4px;}
+  .card-nom{font-family:'Righteous',sans-serif;font-size:1.7rem;color:#fff;line-height:1.1;}
+  .card-art{font-size:.8rem;color:rgba(255,255,255,.65);margin-top:4px;font-weight:600;}
+  .card-body{padding:14px 18px 18px;}
+  .card-desc{font-size:1rem;color:var(--muted);line-height:1.65;margin-bottom:12px;}
+  .dist{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:2px solid var(--border);border-radius:20px;padding:5px 14px;font-size:.9rem;font-weight:700;color:var(--violet);margin-bottom:14px;}
+  .btn-escuchar{width:100%;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--violet),var(--magenta));color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(124,58,255,.3);transition:transform .15s;}
+  .btn-escuchar:active{transform:scale(.96);}
+  .btn-row{display:flex;gap:10px;}
+  .btn{flex:1;padding:14px 16px;border-radius:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;border:none;text-align:center;text-decoration:none;display:inline-block;line-height:1;transition:transform .15s,box-shadow .15s;}
+  .btn:active{transform:scale(.96);}
+  .btn-v{background:linear-gradient(135deg,var(--lime),#5EFF00);color:var(--dark);box-shadow:0 4px 14px rgba(170,255,0,.35);}
+  .btn-v:hover{box-shadow:0 6px 20px rgba(170,255,0,.5);transform:translateY(-1px);}
 
-h2 { font-size:22px; }
-p { font-size:18px; }
+  /* NAV */
+  .nav-card{background:var(--white);border:2px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:0 4px 18px rgba(124,58,255,.08);}
+  .nav-header{background:var(--dark);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .nav-title{font-family:'Righteous',sans-serif;font-size:1.1rem;color:#fff;}
+  .nav-badge{background:var(--lime);color:var(--dark);font-size:.65rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:20px;}
+  .nav-info{display:flex;border-bottom:2px solid var(--border);}
+  .nav-stat{flex:1;padding:10px 14px;text-align:center;border-right:2px solid var(--border);}
+  .nav-stat:last-child{border-right:none;}
+  .nav-stat-val{font-family:'Righteous',sans-serif;font-size:1.4rem;color:var(--dark);line-height:1;}
+  .nav-stat-lbl{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:2px;}
+  #map{width:100%;height:280px;}
+  .pasos-wrap{padding:12px 16px 14px;}
+  .pasos-titulo{font-size:.7rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .pasos-lista{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .paso{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:var(--bg);border-radius:10px;font-size:.88rem;color:var(--dark);line-height:1.5;}
+  .paso.activo{background:#EDE8FF;border:1px solid var(--violet);}
+  .paso-ico{width:24px;height:24px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0;margin-top:1px;}
+  .paso.activo .paso-ico{background:var(--magenta);}
+  .ruta-loading{padding:20px;text-align:center;color:var(--muted);font-size:.9rem;font-weight:600;}
+  .ruta-loading span{display:block;font-size:1.5rem;margin-bottom:6px;animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-button {
-  width:100%;
-  padding:14px;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  margin-top:8px;
-}
+  /* LISTA */
+  .stit{font-size:.7rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:20px 0 10px;}
+  .lista{display:flex;flex-direction:column;gap:7px;}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border:2px solid var(--border);border-radius:14px;font-size:1rem;font-weight:600;transition:border-color .2s,background .2s;}
+  .item.v{border-color:var(--lime);background:#F5FFDB;}
+  .item.activo-item{border-color:var(--violet);background:#EDE8FF;}
+  .item .n{font-family:'Righteous',sans-serif;font-size:1.1rem;color:var(--border);min-width:28px;}
+  .item.v .n{color:var(--orange);} .item.activo-item .n{color:var(--violet);}
+  .item .nm{flex:1;color:var(--muted);}
+  .item.v .nm,.item.activo-item .nm{color:var(--dark);}
+  .item .ck{width:24px;height:24px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:900;color:var(--dark);flex-shrink:0;}
+  .item .act-dot{width:10px;height:10px;border-radius:50%;background:var(--violet);flex-shrink:0;animation:blink 1.4s infinite;}
 
-.btn-audio { background:#3498db; color:white; }
-.btn-next { background:#2ecc71; color:white; }
+  /* ── PANTALLA FINAL + ENCUESTA ── */
+  .pantalla-final{animation:popIn .5s ease;}
+
+  .despedida-card{background:var(--dark);border-radius:22px;overflow:hidden;margin-bottom:16px;box-shadow:0 6px 28px rgba(124,58,255,.2);}
+  .despedida-stripe{height:5px;background:linear-gradient(90deg,var(--magenta),var(--orange),var(--lime),var(--cyan),var(--violet));background-size:200%;animation:sa 4s linear infinite;}
+  .despedida-body{padding:28px 22px;}
+  .despedida-emoji{font-size:3rem;text-align:center;margin-bottom:12px;}
+  .despedida-titulo{font-family:'Righteous',sans-serif;font-size:2rem;text-align:center;background:linear-gradient(135deg,var(--magenta),var(--orange),var(--lime));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;line-height:1.2;}
+  .despedida-texto{font-size:1rem;color:rgba(255,255,255,.75);line-height:1.75;text-align:center;}
+  .despedida-texto p{margin-bottom:10px;}
+
+  .invitacion-card{background:var(--white);border:2px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;text-align:center;}
+  .invitacion-titulo{font-family:'Righteous',sans-serif;font-size:1.1rem;color:var(--violet);margin-bottom:8px;}
+  .invitacion-texto{font-size:.95rem;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+
+  /* ENCUESTA */
+  .encuesta-card{background:var(--white);border:2px solid var(--border);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 4px 18px rgba(124,58,255,.08);}
+  .encuesta-header{background:linear-gradient(135deg,var(--violet),var(--magenta));padding:16px 20px;}
+  .encuesta-titulo{font-family:'Righteous',sans-serif;font-size:1.3rem;color:#fff;}
+  .encuesta-subtitulo{font-size:.82rem;color:rgba(255,255,255,.65);margin-top:3px;}
+  .encuesta-body{padding:18px 20px 20px;}
+
+  .pregunta{margin-bottom:20px;}
+  .pregunta-label{font-size:.95rem;font-weight:800;color:var(--dark);margin-bottom:10px;display:block;}
+  .pregunta-num{color:var(--magenta);margin-right:4px;}
+
+  /* Estrellas */
+  .estrellas{display:flex;gap:8px;}
+  .estrella{font-size:2rem;cursor:pointer;opacity:.3;transition:opacity .2s,transform .1s;}
+  .estrella.sel{opacity:1;}
+  .estrella:active{transform:scale(.85);}
+
+  /* Opciones botón */
+  .opciones{display:flex;flex-wrap:wrap;gap:8px;}
+  .opcion{padding:8px 14px;border-radius:20px;border:2px solid var(--border);background:var(--bg);font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;}
+  .opcion.sel{border-color:var(--violet);background:#EDE8FF;color:var(--violet);}
+
+  /* Select mural */
+  .select-mural{width:100%;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);font-family:'Nunito',sans-serif;font-size:.95rem;color:var(--dark);font-weight:600;appearance:none;-webkit-appearance:none;cursor:pointer;}
+  .select-mural:focus{outline:none;border-color:var(--violet);}
+
+  /* Textarea */
+  .textarea-enc{width:100%;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);font-family:'Nunito',sans-serif;font-size:.95rem;color:var(--dark);resize:none;height:90px;}
+  .textarea-enc:focus{outline:none;border-color:var(--violet);}
+
+  .btn-enviar{width:100%;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--violet),var(--magenta));color:#fff;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;cursor:pointer;margin-top:4px;box-shadow:0 4px 14px rgba(124,58,255,.3);transition:transform .15s;}
+  .btn-enviar:active{transform:scale(.97);}
+
+  .gracias-enc{text-align:center;padding:20px;display:none;}
+  .gracias-enc .emoji{font-size:2.5rem;margin-bottom:8px;}
+  .gracias-enc p{font-size:.95rem;color:var(--muted);line-height:1.6;}
+
+  /* ERROR */
+  .error{background:#FFF0F5;border:2px solid rgba(255,45,120,.25);border-radius:16px;padding:20px;font-size:1rem;color:var(--muted);line-height:1.6;}
+  .error strong{display:block;color:var(--magenta);font-weight:800;margin-bottom:5px;}
+
+  .pasos-lista::-webkit-scrollbar{width:4px;}
+  .pasos-lista::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 </style>
 </head>
-
 <body>
 
-<div id="mapa"></div>
-
-<div class="sheet">
-  <div class="handle"></div>
-  <div id="contenido" class="content">
-    <h2>📡 Cargando ubicación...</h2>
+<!-- ══ BIENVENIDA ══ -->
+<div id="pantalla-bienvenida">
+  <div class="bienvenida-stripe"></div>
+  <div class="bienvenida-hero">
+    <div class="bienvenida-logo"><span class="mg">Graffiti</span><br><span class="cy">Tour</span></div>
+    <div class="bienvenida-subtitulo">Entre montañas y colores</div>
+    <div class="bienvenida-tag">Vijes · Valle del Cauca</div><br><br>
+    <div class="bienvenida-duracion">🕐 Duración aprox. 1.5 horas · 10 murales</div>
+  </div>
+  <div class="bienvenida-cuerpo">
+    <div class="bienvenida-seccion">
+      <div class="bienvenida-seccion-titulo">🎨 Bienvenidos</div>
+      <div class="bienvenida-texto">
+        <p>¡Bienvenidos a <strong style="color:#fff">Entre montañas y colores</strong>, el primer recorrido de arte urbano del municipio de Vijes!</p>
+        <p>Este viaje a pie es mucho más que una ruta de murales: es una conexión viva entre el pasado y el presente, entre los antiguos pobladores del territorio y las nuevas generaciones de artistas que hoy transforman los muros del pueblo en lienzos llenos de historia, identidad y color.</p>
+      </div>
+    </div>
+    <div class="bienvenida-seccion">
+      <div class="bienvenida-seccion-titulo">🪨 Origen ancestral</div>
+      <div class="bienvenida-texto"><p>Mucho antes de los aerosoles y las brochas, el arte ya estaba presente en Vijes:</p></div>
+      <div class="piedras">
+        <div class="piedra-item"><div class="piedra-icon">☀️</div><div class="piedra-texto"><span class="piedra-nombre">La Piedra del Sol</span>Monolito sagrado con petroglifos milenarios en la vereda La Pedrera.</div></div>
+        <div class="piedra-item"><div class="piedra-icon">🪶</div><div class="piedra-texto"><span class="piedra-nombre">La Piedra del Indio</span>Con pinturas rupestres en la vereda Mozambique, realizadas hace cientos de años.</div></div>
+      </div>
+    </div>
+    <div class="bienvenida-seccion">
+      <div class="bienvenida-seccion-titulo">🗺️ Los 10 murales</div>
+      <div class="murales-lista">
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">01</span><span class="mural-nombre-bienvenida">El tesoro del sol</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">02</span><span class="mural-nombre-bienvenida">El último sueño de la Calima</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">03</span><span class="mural-nombre-bienvenida">Poetiza tu cotidiano</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">04</span><span class="mural-nombre-bienvenida">Memoria viva</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">05</span><span class="mural-nombre-bienvenida">Vijes, geometría viva</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">06</span><span class="mural-nombre-bienvenida">Herencia viva</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">07</span><span class="mural-nombre-bienvenida">Manitos que transforman</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">08</span><span class="mural-nombre-bienvenida">La chiva</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">09</span><span class="mural-nombre-bienvenida">Entrelace</span></div>
+        <div class="mural-item-bienvenida"><span class="mural-num-bienvenida">10</span><span class="mural-nombre-bienvenida">Cian</span></div>
+      </div>
+    </div>
+    <div class="bienvenida-seccion">
+      <div class="bienvenida-seccion-titulo">📱 Cómo funciona</div>
+      <div class="bienvenida-texto">
+        <p>🗺️ El mapa te guía a pie de mural en mural, en orden.</p>
+        <p>🎙️ Al llegar a cada mural, una voz lee automáticamente su historia.</p>
+        <p>✓ Toca <strong style="color:#fff">"Ya lo visité"</strong> para avanzar al siguiente.</p>
+        <p>📍 Punto de inicio: letrero <strong style="color:var(--cyan)">"Yo ❤️ Vijes"</strong> en la entrada al parque principal.</p>
+      </div>
+    </div>
+    <div class="bienvenida-seccion" style="border-color:rgba(170,255,0,.2);background:rgba(170,255,0,.05)">
+      <div class="bienvenida-texto" style="text-align:center;font-style:italic;color:rgba(255,255,255,.6);font-size:1rem">
+        "Camina sin prisa. Observa con atención. Este recorrido no solo es un tour: es un acto de reconocimiento, un homenaje a la historia viva de un pueblo que hoy se cuenta a brochazos y aerosoles."
+      </div>
+    </div>
+  </div>
+  <div class="btn-iniciar-wrap">
+    <button class="btn-iniciar" onclick="iniciarTour()">🚀 Iniciar recorrido</button>
   </div>
 </div>
 
+<!-- ══ APP ══ -->
+<div id="app">
+  <header>
+    <div class="stripe"></div>
+    <div class="hi">
+      <div class="ht">
+        <h1><span class="mg">Graffiti</span><br><span class="cy">Tour</span></h1>
+        <span class="tag">Vijes · Valle</span>
+      </div>
+      <div class="pr">
+        <span class="pl">Tu recorrido</span>
+        <div class="pt"><div class="pf" id="pf"></div></div>
+        <span class="pn" id="pn">0/10</span>
+      </div>
+    </div>
+  </header>
+  <div class="gps"><div class="dot" id="dot"></div><span id="gtxt">Detectando ubicación...</span></div>
+  <div class="voz-banner" id="voz-banner">
+    <div class="voz-onda"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="voz-txt" id="voz-txt">Leyendo...</div>
+    <button class="btn-parar" onclick="pararVoz()">■ Parar</button>
+  </div>
+  <main>
+    <div class="sk-wrap" id="sk"><div class="sk s"></div><div class="sk m"></div><div class="sk l"></div><div class="sk" style="width:70%"></div></div>
+    <div id="cont" style="display:none"></div>
+    <div id="sec" style="display:none">
+      <div class="stit">Recorrido completo</div>
+      <div class="lista" id="lst"></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-
-let mapa = L.map('mapa').setView([3.7001,-76.4427],17);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
-
+// ── MURALES EN NUEVO ORDEN ──
 const murales = [
-{n:"Poetiza tu cotidiano",lat:3.7001198,lng:-76.4427437,a:"Mira lo cotidiano con nuevos ojos."},
-{n:"El tesoro del sol",lat:3.6998287,lng:-76.4426877,a:"Memoria ancestral."},
-{n:"El último sueño de la Calima",lat:3.6998444,lng:-76.4427749,a:"Herencia indígena."},
-{n:"Memoria viva",lat:3.700996,lng:-76.4433965,a:"Historia viva."},
-{n:"Vijes geometría viva",lat:3.7003282,lng:-76.4413265,a:"Nombre hecho arte."},
-{n:"Herencia viva",lat:3.7002728,lng:-76.441256,a:"Legado cultural."},
-{n:"Manitos que transforman",lat:3.7001997,lng:-76.4408594,a:"Tradición."},
-{n:"La chiva",lat:3.7001141,lng:-76.4405342,a:"Vida cotidiana."},
-{n:"Entrelace",lat:3.6999729,lng:-76.4403914,a:"Saberes."},
-{n:"Cian",lat:3.6998541,lng:-76.4399207,a:"Naturaleza."}
+  { num:1, nombre:"El tesoro del sol", artista:"NAUTA · Dosquebradas · @nestorgomez.art", lat:3.6998287, lng:-76.4426877,
+    desc:"Inspirada en la Piedra del Sol y relatos locales, reconstruye la memoria ancestral de Vijes con el rojo del achiote y animales míticos.",
+    guion:"Mural número 1: El tesoro del sol. Artista: NAUTA, Néstor Gómez, de Dosquebradas, Colombia. Esta obra nace del corazón legendario de Vijes, inspirada en la fuerza simbólica de la Piedra del Sol. En ella predominan el rojo, que representa el achiote y la resistencia, y el verde, que evoca la abundancia natural de los bosques y montañas. Aparecen serpientes míticas como espíritus protectores del territorio, y una figura central femenina que emerge del suelo como guardiana del pasado. Su frase dice: El verdadero tesoro no está enterrado bajo la piedra, sino vivo en la memoria del territorio.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X4Dqowgm1VHtUYhiu6MZ1z00wY-CeAJEThthE8mO_Hd8h-Qg-hHkNP-5bqB-1Hv2BJ8U2kLcIBmNubxH64TF9ZKa-tF0gArYtqqbHAFP2moGiH2uBekrNziMCKZh5CC-mR5pSmaaU6r6cPKpwoTIzQZhQIFheJX5cUmhGmPBzQTSO8WALgyzxtBfLHKVXYifBYnSi4WOrCXgc3ZEdsCg1TGgZ-7zZp6-9MWm7KHHyeOCbDdJH8l8M5W6Rk?authuser=0&fife=s16383" },
+  { num:2, nombre:"El último sueño de la Calima", artista:"ZELVA UNO · Perú · @zelvauno", lat:3.6998444, lng:-76.4427749,
+    desc:"Una familia despide a su hijo que viaja sobre un ave pechiroja llevando el conocimiento ancestral del pueblo Calima.",
+    guion:"Mural número 2: El último sueño de la Calima. Artista: ZELVA UNO, de Lima, Perú. Esta obra rinde homenaje al legado de los pueblos indígenas del suroccidente colombiano. Una familia despide a su hijo, quien viaja sobre un ave pechiroja, encarnando a las nuevas generaciones que heredan el conocimiento ancestral. La composición incluye orfebrería precolombina, semillas de achiote y la Piedra del Sol. La Madre Tierra aparece con sus manos extendidas en gesto de cuidado. Su frase dice: No es un adiós, es una herencia: el niño vuela, pero lleva el saber de su pueblo en la espalda.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X6kiqnwM5m8KBsWx9gEaTVJiW8CXeFg_VzY7j9UPVIyJgNZ5eGNeiLd5wJocL61Sck2Uet8N3b_NYzD_Z1t-rVfhLpOL24EUA0AfxSCEuuzTDP6tpAx9yzlBQ5rdr_XdX3xqpsCS3AyAbRLXPsF0bkr5vudsEwdRWEY6o1YLUoZKHiT0SrBJrnmYAzh5Jl4kDvEhmPYdAZyRxGoKqb5Q0RDcBg9QpPrx5azti_CTWsZWAGjWxCsN1-ukDA?authuser=0&fife=s16383" },
+  { num:3, nombre:"Poetiza tu cotidiano", artista:"Rito sin sermones · Cali · @ritosinsermones", lat:3.7001198, lng:-76.4427437,
+    desc:"Dos vasijas precolombinas de la cultura Calima sostenidas por figuras femeninas, rodeadas de flores y frutos de achiote.",
+    guion:"Mural número 3: Poetiza tu cotidiano. Artista: Rito sin sermones, de Cali, Colombia. Este mural invita a mirar lo cotidiano con otros ojos. Presenta dos vasijas precolombinas de la cultura Calima, sostenidas por figuras femeninas, rodeadas de semillas y frutos de achiote, planta sagrada de las culturas originarias. Los colores terrosos y el trazo orgánico evocan una atmósfera de recogimiento y respeto por los ciclos de la vida. Su frase dice: La poesía no siempre está en los libros. A veces está en una vasija, una flor o una semilla. En lo simple, habita lo sagrado.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X4MVrQ35b-qh2rRO0NP28vEeLFs0HGFwS_ydvc37qp_QKDVjIRNgJckn-7OTC-_k_iI42xfida5ZaibFnGr6LHYBBZZhSYSio4WtReSc-OYhPUOznAb22q9vwsHfRWw5oOrD68qDnDGrM2nujPQhO-hxOW1zyTFfmyB0D_Uvfvi_XlPBZTAYddBKIiBgPN1T4VIJJjISwBy_dzsAjX4su4kQQJP-FwegXjrvxN6JhAje2s0ZNgX-qCJsg0?authuser=0&fife=s16383" },
+  { num:4, nombre:"Memoria viva", artista:"Sancho · Cali · @sancho_medina", lat:3.700996, lng:-76.4433965,
+    desc:"Una mujer en trance espiritual porta una vasija precolombina Calima desde la fachada del Museo Santa Bárbara.",
+    guion:"Mural número 4: Memoria viva. Artista: Sancho, Sebastián Medina, de Cali. Realizado en la fachada del Museo Santa Bárbara, este mural muestra a una mujer en estado de trance espiritual. Su cuerpo no solo conecta con la tierra: es tierra. Ella porta una vasija precolombina de la cultura Calima, símbolo del conocimiento ancestral. Incorpora el achiote, planta de la que proviene el nombre de Vijes, y la piedra caliza, recurso histórico del municipio. Su frase dice: La mujer en trance no sueña: recuerda.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X5DWqVZQmhJMuiexW0XRGsoZTlUoozwcOsNX3MKdY7-vtRYC9jg-0VEP7GsjzWK8Axsf8nfNM6nOCaUwwTkuy4GXYtWLkGEfSECtQYwCtBZNauDqqq1lWnXZDNfF62LYlB9ARHUZWdh6JTTyBKlWu0pkVhA7q6OeBUmfYj_HJSNunxpOIaoYORhA21k-HWeNQhvXmSyztU3Gi7oMU8qoNKdTNsSzTRquATrM_qg77XuuIx_ulbwkLvELFY?authuser=0&fife=s16383" },
+  { num:5, nombre:"Vijes, geometría viva", artista:"ONCA · Cali · @oncaprint", lat:3.7003282, lng:-76.4413265,
+    desc:"La palabra VIJES convertida en pieza tipográfica monumental inspirada en futurismo, constructivismo y biodiversidad local.",
+    guion:"Mural número 5: Vijes, geometría viva. Artista: ONCA, Angélica María Conde Pérez, de Cali. La palabra VIJES se convierte en una forma gráfica viva, con líneas dinámicas, luces, sombras y figuras geométricas. Se inspira en el paisaje montañoso, la biodiversidad del Valle del Cauca y la modernidad visual del futurismo y el constructivismo. La protagonista es la palabra y su capacidad de proyectar identidad. Su frase dice: Aquí el nombre no se lee, se siente.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X4pUXS3Wnny1vfNYdpkB1hXv-eOORxJzSaHZifPkifqrldoZsn7Obes6Is4M6D5mOPjh8bvk--XH88Yyks3V2VJlzbE18rj6AvDPPWbbbeDvynOZad5xFMBRW1XWiAlUFpAv-E6YH3pjtzNYIPU4fvAgYRbjSm8WQsV1SVnVrL2c8Sf8HyuTPtweTfNNFU-sFTZuyj4lxPqqUKFCqhCBUkDieNmPuzqlm1L4k37b8k0TmuM5Vn4hp5tS-E?authuser=0&fife=s16383" },
+  { num:6, nombre:"Herencia viva", artista:"SEPC · Colombia · @sepc_", lat:3.7002728, lng:-76.441256,
+    desc:"Homenaje a la juventud de Vijes como portadora del legado cultural, artesanal e histórico del municipio.",
+    guion:"Mural número 6: Herencia viva. Artista: SEPC, artista urbano colombiano. Un homenaje a la juventud de Vijes como portadora del legado cultural. Vemos una mariposa símbolo de transformación, el achiote protagonista cromático del territorio, vasijas precolombinas de la cultura Calima, y pinturas faciales tradicionales. El retrato de una figura joven emerge como síntesis del pasado y el porvenir. Su frase dice: La herencia no es una carga: es una semilla que cada generación hace brotar distinto.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X6HsLLqKDWWs4heoc4nbzLM6KOyerpwstriKxoOmd81zj9Y1UEpVm8pCiKAM5Z0uHdVuwTOeufuhIhIU10mnVh1zHkN_q6dWzPKVxKDBgI4LcuX-SqCzNIbqYfZeCNQ57LFzknH3R73a5CCd2QvszQL75lNgl7blHaw4ZGw4KgfZbJgRvEn8Zto9CPik28KEtckzbwu1_afndqNnRENSlnnFRQHcfyS_hY5aWhuQRwfW9h8qPIMLjQKb9Q?authuser=0&fife=s16383" },
+  { num:7, nombre:"Manitos que transforman", artista:"Mugre Diamante · Manizales · @mugrediamante", lat:3.7001997, lng:-76.4408594,
+    desc:"Celebración del trabajo culinario y artesanal de las mujeres de Vijes con la paila de manjar blanco como símbolo central.",
+    guion:"Mural número 7: Manitos que transforman. Artista: Mugre Diamante, Ana Jurado, de Manizales. Celebra el trabajo artesanal y culinario de las mujeres del municipio. En el centro, una paila humeante de manjar blanco, dulce tradicional cuya preparación requiere paciencia y técnica. A sus lados, la planta de arroz, la flor de achiote y aretes con forma de mariposa. Las manos trabajadoras son las protagonistas: manos que cocinan, crean y sostienen la tradición. Su frase dice: Aquí no solo se cocina. Aquí se cultiva la memoria con cada cucharada de manjar.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X6Z4l4s2GIbKpogFtCk3lFjN2hw2SPKPK3HjSEXJAr6gf02a1nnYvjOD7ywydIbhXNnk5_-BaoQ6eppvrFyA_yb4tjogLybfuQNQDXPHlTbqh2K-PtiemBE6NYclceivlvarzFyL_wj6fR7JQScngMui76ahO5tV8QZMWZcL7hY5oqiDpqUp998_1-MPgw6zHNkUWspLS7mIk5nXFNQ8w_JtKIkfd9vJ94nI-aFWFG6J5mepepogZUZULU?authuser=0&fife=s16383" },
+  { num:8, nombre:"La chiva", artista:"El Marian · Argentina · @el.mar.ian", lat:3.7001141, lng:-76.4405342,
+    desc:"Ganadora del Festival Entre Montañas 2025. Retrata con fidelidad el paso de una chiva por la calle principal de Vijes.",
+    guion:"Mural número 8: La chiva. Artista: El Marian, de Buenos Aires, Argentina. Basada en un registro fotográfico real: el paso de una chiva o bus escalera por la calle principal de Vijes. El artista retrata este instante con fidelidad casi documental pero cargada de emoción. Ganó el primer lugar del Festival Entre Montañas 2025 por su potencia emocional y su capacidad de capturar la esencia del pueblo. Su frase dice: Este mural no representa al pueblo: lo retrata.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X4S36dngi7aEdekkNyriYXrSBt1MC5v4CNLJi9V4XHlhb1rl_jL3LjDC4BsbSgGsg6E_3zIFwUyXPtTX2stQN6slxGwveZkmjRYH4uscMKjl1DpngRtb2G1Ftt1JuQjR_BZx4HJ_W4ifPhPbZNQ3W9Rt1tlP2Ag-UHTQJ-X8eIBA1JZ84ohj2Brkv1Db6gMrJnxsCM-6Y9edGF-3B_aysIGJWbYMuHJrY-zc9egsLwG4-RbUrKlN_PL1F0?authuser=0&fife=s16383" },
+  { num:9, nombre:"Entrelace", artista:"Power · Cali · @p0wer_sun", lat:3.6999729, lng:-76.4403914,
+    desc:"Homenaje a las manos mayores que han preservado los saberes culinarios y artesanales de Vijes a través de las generaciones.",
+    guion:"Mural número 9: Entrelace. Artista: Power, Evelin García, de Cali. Rinde homenaje a las manos mayores que durante generaciones han sostenido la transmisión de saberes culturales. En primer plano, manos ancianas sostienen una paila con manjar blanco. A un costado, un horno de cal, icono histórico de Vijes. Formas entrelazadas aluden al tejer de las historias familiares y los saberes orales. Su frase dice: Las manos que cocinan también tejen la memoria de un pueblo.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X6xaiXkdLgYHZ_jAzc_4kxB9SXxQ53QLQrg2OiM4bsOzUegWNl4XkSR6vSmXiCYvBe6B_lLZ9QJ-JarX2_n63XPdrUc4VqJtaLY284heZZqNtnGL3ltAVYoIVxXVLpwhMyZwBYpBTAs_D4Zo_UXjpfrIiissYeYfJhaUDptLemZnXIh3P5_25gKcQSmbhnRbsEHIzgVHlE3Y_ORWWxFURa3F9QzrL1LLIfuw6NfbWpx5-Suz3oZL-_VlxQ?authuser=0&fife=s16383" },
+  { num:10, nombre:"Cian", artista:"LETOP · Cali · @mundoletop", lat:3.6998541, lng:-76.4399207,
+    desc:"Inspirado en la tangara cabeciazul, homenajea la biodiversidad de Vijes con formas geométricas y el color cian como protagonista.",
+    guion:"Mural número 10 y último: Cian. Artista: LETOP, Héctor Andrés Pedroza, de Cali. Inspirado en la tangara cabeciazul, un ave deslumbrante que habita los bosques de Vijes. El color cian tiñe todo el mural con energía serena y vital. Formas geométricas abstractas reconstruyen la imagen del ave como metáfora de la conexión entre naturaleza y arte contemporáneo. Este es el último mural del recorrido. Su frase dice: El arte también vuela. Esta ave nos recuerda que lo más bello del territorio, a menudo, pasa desapercibido.",
+    foto:"https://mymaps.usercontent.google.com/hostedimage/m/*/3AL_Y2X6y7weW5-VXqt_PUeKvfvxQ-ROnyNJ0b5CFA8S_WDERn5oShGGY_AKh-U5xXQDvb3qAz0NWnJMqDVX5Cd2PLh8EXIpm98GEt46ZWFD0pLlW76i36mNZO_Aiz4FVah4L1kZZrfzCR52XURmQnZJVesDgacum4uQC--7Uc6YKQtbl_T_fzozLUpo4wNHjiwfSoBOvEI5cH-DXyOW5kS9mof-iSR6kb4CizFwzKiOav27luDNlcP7ay1iZUAs?authuser=0&fife=s16383" }
 ];
 
-let indiceActual = 0;
-let rutaControl = null;
+const DESPEDIDA_VOZ = "¡Felicitaciones! Acabas de completar el Graffiti Tour Entre Montañas y Colores de Vijes. Diez murales, diez historias, diez artistas que pintaron con el alma la memoria viva de este territorio. Esperamos que cada imagen, cada color y cada palabra haya dejado una huella en tu corazón, así como este pueblo la ha dejado en sus muros. Gracias por caminar con nosotros, por mirar con atención y por honrar con tu presencia la historia de Vijes. Este recorrido no termina aquí: termina cuando tú lo cuentes, cuando lo compartas, cuando regreses con otras personas y les muestres que un pueblo que pinta su historia, pinta su futuro. Te invitamos a completar una breve encuesta para ayudarnos a mejorar esta experiencia. ¡Hasta pronto, y bienvenido siempre a Vijes!";
 
-function dist(a,b,c,d){
- const R=6371000;
- const dLat=(c-a)*Math.PI/180;
- const dLon=(d-b)*Math.PI/180;
- const x=Math.sin(dLat/2)**2+
- Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
- Math.sin(dLon/2)**2;
- return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+// ── ESTADO ──
+let indiceActual = parseInt(localStorage.getItem('vijes_indice') || '0');
+let mapa=null, capasRuta=[], marcadorUsuario=null;
+let vozActiva=false, vozDisparada=false, renderActual=-1;
+const DIST_VOZ=30;
+
+// ── BIENVENIDA ──
+function iniciarTour(){
+  document.getElementById('pantalla-bienvenida').style.display='none';
+  document.getElementById('app').style.display='block';
+  iniciarGPS();
 }
 
-function hablar(t){
- let m=new SpeechSynthesisUtterance(t);
- m.lang="es-ES";
- speechSynthesis.cancel();
- speechSynthesis.speak(m);
+// ── VOZ ──
+function obtenerVozFemenina(){
+  const voces=window.speechSynthesis.getVoices();
+  const fns=[
+    v=>v.lang.startsWith('es')&&/paulina|monica|francisca|sabina|laura|sofia|carmen|esperanza|female|mujer/i.test(v.name),
+    v=>v.lang.startsWith('es'), v=>v.default
+  ];
+  for(const fn of fns){const v=voces.find(fn);if(v)return v;}
+  return null;
 }
 
-function actualizarSistema(lat,lng){
-
- let destino = murales[indiceActual];
-
- if(rutaControl) mapa.removeControl(rutaControl);
-
- rutaControl = L.Routing.control({
-  waypoints:[
-    L.latLng(lat,lng),
-    L.latLng(destino.lat,destino.lng)
-  ],
-  router:L.Routing.osrmv1({profile:'foot'}),
-  createMarker:()=>null,
-  addWaypoints:false,
-  draggableWaypoints:false,
-  show:false
- }).addTo(mapa);
-
- let d = dist(lat,lng,destino.lat,destino.lng);
-
- if(d < 15){
-
-   document.getElementById("contenido").innerHTML = `
-     <h2>📍 ${destino.n}</h2>
-     <p>Mural ${indiceActual+1} de ${murales.length}</p>
-
-     <button class="btn-audio" onclick="hablar('${destino.a}')">
-       🔊 Escuchar
-     </button>
-
-     <button class="btn-next" onclick="siguiente()">
-       ➡️ Siguiente
-     </button>
-   `;
-
-   hablar(destino.a);
-
- } else {
-
-   if(indiceActual === 0){
-     document.getElementById("contenido").innerHTML = `
-       <h2>📍 Dirígete al inicio</h2>
-       <p>${destino.n}</p>
-       <p>${d.toFixed(0)} metros</p>
-     `;
-   } else {
-     document.getElementById("contenido").innerHTML = `
-       <h2>➡️ Siguiente mural</h2>
-       <p>${destino.n}</p>
-       <p>${d.toFixed(0)} metros</p>
-     `;
-   }
- }
+function leerTexto(texto,etiqueta){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(texto);
+  utt.lang='es-CO'; utt.rate=0.92; utt.pitch=1.1;
+  const asignar=()=>{const v=obtenerVozFemenina();if(v)utt.voice=v;};
+  asignar();
+  if(!window.speechSynthesis.getVoices().length) window.speechSynthesis.onvoiceschanged=asignar;
+  vozActiva=true;
+  document.getElementById('voz-banner').classList.add('activo');
+  document.getElementById('voz-txt').textContent=etiqueta||'Leyendo...';
+  utt.onend=utt.onerror=()=>{vozActiva=false;document.getElementById('voz-banner').classList.remove('activo');};
+  window.speechSynthesis.speak(utt);
 }
 
-function siguiente(){
- indiceActual++;
-
- if(indiceActual >= murales.length){
-   document.getElementById("contenido").innerHTML = `
-     <h2>🎉 Recorrido completado</h2>
-     <p>Gracias por visitar Vijes</p>
-   `;
- }
+function pararVoz(){
+  window.speechSynthesis.cancel();
+  vozActiva=false;
+  document.getElementById('voz-banner').classList.remove('activo');
 }
 
-navigator.geolocation.watchPosition(pos=>{
+// ── PROGRESO / LISTA ──
+function progreso(){
+  document.getElementById('pf').style.width=(indiceActual/10*100)+'%';
+  document.getElementById('pn').textContent=indiceActual+'/10';
+}
 
- if(pos.coords.accuracy > 25){
-   document.getElementById("contenido").innerHTML =
-   "<h2>📡 Ajustando GPS... camina unos pasos</h2>";
-   return;
- }
+function lista(){
+  document.getElementById('lst').innerHTML=murales.map((m,i)=>{
+    const vis=i<indiceActual,act=i===indiceActual;
+    return `<div class="item ${vis?'v':act?'activo-item':''}">
+      <span class="n">${String(m.num).padStart(2,'0')}</span>
+      <span class="nm">${m.nombre}</span>
+      ${vis?'<span class="ck">✓</span>':''}
+      ${act?'<span class="act-dot"></span>':''}
+    </div>`;
+  }).join('');
+}
 
- actualizarSistema(pos.coords.latitude,pos.coords.longitude);
+// ── MAPA ──
+const iM=()=>L.divIcon({html:`<div style="background:#FF2D78;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,iconSize:[20,20],iconAnchor:[10,10],className:''});
+const iU=()=>L.divIcon({html:`<div style="background:#7C3AFF;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,iconSize:[16,16],iconAnchor:[8,8],className:''});
+function iconoPaso(t){t=(t||'').toLowerCase();if(t.includes('left'))return'←';if(t.includes('right'))return'→';if(t.includes('arrive'))return'📍';if(t.includes('depart'))return'🚶';if(t.includes('roundabout'))return'↻';return'↑';}
 
-},{
- enableHighAccuracy:true,
- maximumAge:0,
- timeout:5000
-});
+async function obtenerRuta(uLa,uLo,mLa,mLo){
+  const K='5b3ce3597851110001cf6248a32d2b3e2e5c4d0c8cbad5aa34bbb8bc';
+  try{const r=await fetch(`https://api.openrouteservice.org/v2/directions/foot-walking?api_key=${K}&start=${uLo},${uLa}&end=${mLo},${mLa}`);if(!r.ok)throw 0;return await r.json();}catch{return null;}
+}
 
+function dibujarRuta(gj){
+  capasRuta.forEach(c=>mapa.removeLayer(c));capasRuta=[];
+  const coords=gj.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+  const l=L.polyline(coords,{color:'#FF7A00',weight:5,opacity:.9}).addTo(mapa);
+  capasRuta.push(l);mapa.fitBounds(l.getBounds(),{padding:[30,30]});
+}
+
+function mostrarPasos(gj){
+  const seg=gj.features[0].properties.segments;
+  if(!seg||!seg[0])return;
+  const pasos=seg[0].steps||[],dist=seg[0].distance||0,dur=Math.ceil((seg[0].duration||0)/60);
+  document.getElementById('nav-dist').textContent=dist>=1000?(dist/1000).toFixed(1)+' km':Math.round(dist)+' m';
+  document.getElementById('nav-dur').textContent=dur+' min';
+  document.getElementById('pasos-lista').innerHTML=pasos.map((p,i)=>{
+    const d=p.distance>=1000?(p.distance/1000).toFixed(1)+' km':Math.round(p.distance)+' m';
+    return `<div class="paso ${i===0?'activo':''}"><div class="paso-ico">${iconoPaso(p.type)}</div><div class="paso-txt"><strong>${p.instruction||'Continúa recto'}</strong><br><span style="font-size:.8rem;color:var(--muted)">${d}</span></div></div>`;
+  }).join('');
+}
+
+async function mostrarMural(m,dist,uLa,uLo){
+  document.getElementById('cont').innerHTML=`
+    <div class="card">
+      <img class="card-foto" src="${m.foto}" alt="${m.nombre}" onerror="this.style.display='none'">
+      <div class="card-head">
+        <div class="card-num">Mural ${m.num} de 10</div>
+        <div class="card-nom">${m.nombre}</div>
+        <div class="card-art">${m.artista}</div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">${m.desc}</p>
+        <div class="dist">📍 A unos <strong style="margin-left:5px" id="dist-val">${Math.round(dist)} metros</strong></div>
+        <button class="btn-escuchar" onclick="leerTexto(murales[${m.num-1}].guion,'🎙 '+murales[${m.num-1}].nombre)">🎙 Escuchar información del mural</button>
+        <div class="btn-row"><button class="btn btn-v" onclick="marcarVisitado()">✓ Ya lo visité</button></div>
+      </div>
+    </div>
+    <div class="nav-card">
+      <div class="nav-header"><span class="nav-title">🚶 Ruta a pie</span><span class="nav-badge">sin salir de la app</span></div>
+      <div class="nav-info">
+        <div class="nav-stat"><div class="nav-stat-val" id="nav-dist">~${Math.round(dist)} m</div><div class="nav-stat-lbl">distancia</div></div>
+        <div class="nav-stat"><div class="nav-stat-val" id="nav-dur">...</div><div class="nav-stat-lbl">caminando</div></div>
+      </div>
+      <div id="map" style="width:100%;height:280px"></div>
+      <div class="pasos-wrap">
+        <div class="pasos-titulo">Instrucciones paso a paso</div>
+        <div class="pasos-lista" id="pasos-lista"><div class="ruta-loading"><span>⟳</span>Calculando ruta...</div></div>
+      </div>
+    </div>`;
+
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const el=document.getElementById('map');
+  if(!el)return;
+  el.style.height='280px';el.style.width='100%';
+  if(mapa){mapa.remove();mapa=null;capasRuta=[];}
+  mapa=L.map(el,{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(mapa);
+  mapa.invalidateSize();
+  L.marker([m.lat,m.lng],{icon:iM()}).bindTooltip(m.nombre).addTo(mapa);
+  marcadorUsuario=L.marker([uLa,uLo],{icon:iU()}).bindTooltip('Tú estás aquí').addTo(mapa);
+  mapa.fitBounds([[uLa,uLo],[m.lat,m.lng]],{padding:[30,30]});
+  setTimeout(()=>{if(mapa)mapa.invalidateSize();},400);
+  const gj=await obtenerRuta(uLa,uLo,m.lat,m.lng);
+  if(gj&&gj.features){dibujarRuta(gj);mostrarPasos(gj);}
+  else{
+    const l=L.polyline([[uLa,uLo],[m.lat,m.lng]],{color:'#FF7A00',weight:4,dashArray:'8 8'}).addTo(mapa);
+    capasRuta.push(l);mapa.fitBounds([[uLa,uLo],[m.lat,m.lng]],{padding:[30,30]});
+    document.getElementById('pasos-lista').innerHTML=`<div class="paso"><div class="paso-ico">🚶</div><div class="paso-txt">Camina hacia el punto rosado en el mapa.</div></div>`;
+    document.getElementById('nav-dur').textContent='~'+Math.ceil(dist/80)+' min';
+  }
+}
+
+function marcarVisitado(){
+  pararVoz();
+  indiceActual++;
+  localStorage.setItem('vijes_indice',indiceActual);
+  vozDisparada=false;renderActual=-1;
+  progreso();lista();
+  if(indiceActual>=murales.length) mostrarFinal();
+}
+
+// ── PANTALLA FINAL ──
+function mostrarFinal(){
+  pararVoz();
+  if(mapa){mapa.remove();mapa=null;}
+  document.getElementById('cont').innerHTML=`
+    <div class="pantalla-final">
+
+      <div class="despedida-card">
+        <div class="despedida-stripe"></div>
+        <div class="despedida-body">
+          <div class="despedida-emoji">🎨</div>
+          <div class="despedida-titulo">¡Completaste el tour!</div>
+          <div class="despedida-texto">
+            <p>Diez murales, diez historias, diez artistas que pintaron con el alma la memoria viva de este territorio.</p>
+            <p>Esperamos que cada imagen, cada color y cada palabra haya dejado una huella en tu corazón, así como este pueblo la ha dejado en sus muros.</p>
+            <p>Gracias por caminar con nosotros, por mirar con atención y por honrar con tu presencia la historia de Vijes.</p>
+            <p style="color:var(--lime);font-weight:700;margin-top:8px">Este recorrido no termina aquí: termina cuando lo cuentes y cuando regreses con otras personas.</p>
+            <p style="margin-top:8px;font-style:italic;opacity:.7">"Porque un pueblo que pinta su historia, pinta su futuro."</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="invitacion-card">
+        <div class="invitacion-titulo">📣 ¡Vuelve con más personas!</div>
+        <div class="invitacion-texto">Comparte esta experiencia con tu familia, amigos o colegas. Cada visita es un nuevo descubrimiento y una nueva forma de conectar con Vijes.</div>
+      </div>
+
+      <div class="encuesta-card">
+        <div class="encuesta-header">
+          <div class="encuesta-titulo">📋 Cuéntanos tu experiencia</div>
+          <div class="encuesta-subtitulo">Solo 5 preguntas · menos de 2 minutos</div>
+        </div>
+        <div class="encuesta-body" id="encuesta-body">
+
+          <div class="pregunta">
+            <span class="pregunta-label"><span class="pregunta-num">1.</span> ¿Cómo calificarías el recorrido?</span>
+            <div class="estrellas" id="estrellas">
+              <span class="estrella" onclick="selEstrella(1)">★</span>
+              <span class="estrella" onclick="selEstrella(2)">★</span>
+              <span class="estrella" onclick="selEstrella(3)">★</span>
+              <span class="estrella" onclick="selEstrella(4)">★</span>
+              <span class="estrella" onclick="selEstrella(5)">★</span>
+            </div>
+          </div>
+
+          <div class="pregunta">
+            <span class="pregunta-label"><span class="pregunta-num">2.</span> ¿Cuál fue tu mural favorito?</span>
+            <select class="select-mural" id="mural-fav">
+              <option value="">Selecciona un mural...</option>
+              ${murales.map(m=>`<option value="${m.nombre}">${m.num}. ${m.nombre}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="pregunta">
+            <span class="pregunta-label"><span class="pregunta-num">3.</span> ¿Cómo te sentiste durante el tour?</span>
+            <div class="opciones" id="sensacion">
+              <span class="opcion" onclick="selOpcion('sensacion',this)">😊 Emocionado</span>
+              <span class="opcion" onclick="selOpcion('sensacion',this)">😌 Tranquilo</span>
+              <span class="opcion" onclick="selOpcion('sensacion',this)">😲 Sorprendido</span>
+              <span class="opcion" onclick="selOpcion('sensacion',this)">✨ Inspirado</span>
+            </div>
+          </div>
+
+          <div class="pregunta">
+            <span class="pregunta-label"><span class="pregunta-num">4.</span> ¿Qué fue lo que más te gustó?</span>
+            <textarea class="textarea-enc" id="gusto" placeholder="Cuéntanos con tus palabras..."></textarea>
+          </div>
+
+          <div class="pregunta">
+            <span class="pregunta-label"><span class="pregunta-num">5.</span> ¿Lo recomendarías a otras personas?</span>
+            <div class="opciones" id="recomienda">
+              <span class="opcion" onclick="selOpcion('recomienda',this)">👍 Sí, sin duda</span>
+              <span class="opcion" onclick="selOpcion('recomienda',this)">🤔 Tal vez</span>
+              <span class="opcion" onclick="selOpcion('recomienda',this)">👎 No</span>
+            </div>
+          </div>
+
+          <button class="btn-enviar" onclick="enviarEncuesta()">Enviar respuestas ✓</button>
+        </div>
+
+        <div class="gracias-enc" id="gracias-enc">
+          <div class="emoji">🙏</div>
+          <p><strong>¡Gracias por tu respuesta!</strong><br>Tu opinión nos ayuda a mejorar el recorrido y seguir celebrando la historia viva de Vijes.</p>
+        </div>
+      </div>
+
+    </div>`;
+
+  // Voz de despedida
+  setTimeout(()=>leerTexto(DESPEDIDA_VOZ,'🎙 Despedida del tour'),600);
+}
+
+// ── ENCUESTA ──
+let respEstrellas=0;
+function selEstrella(n){
+  respEstrellas=n;
+  document.querySelectorAll('.estrella').forEach((e,i)=>e.classList.toggle('sel',i<n));
+}
+function selOpcion(grupo,el){
+  document.querySelectorAll(`#${grupo} .opcion`).forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function enviarEncuesta(){
+  const muralFav=document.getElementById('mural-fav').value;
+  const sensacion=document.querySelector('#sensacion .opcion.sel')?.textContent||'';
+  const gusto=document.getElementById('gusto').value;
+  const recomienda=document.querySelector('#recomienda .opcion.sel')?.textContent||'';
+  console.log('Encuesta:', {calificacion:respEstrellas,muralFav,sensacion,gusto,recomienda});
+  document.getElementById('encuesta-body').style.display='none';
+  document.getElementById('gracias-enc').style.display='block';
+  // Resetear tour para próxima visita
+  localStorage.removeItem('vijes_indice');
+}
+
+// ── GPS ──
+function iniciarGPS(){
+  progreso();lista();
+  document.getElementById('sec').style.display='block';
+  if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();}
+
+  if(!navigator.geolocation){
+    document.getElementById('sk').style.display='none';
+    document.getElementById('cont').style.display='block';
+    document.getElementById('dot').classList.add('err');
+    document.getElementById('gtxt').textContent='GPS no disponible';
+    document.getElementById('cont').innerHTML='<div class="error"><strong>GPS no disponible</strong>Tu dispositivo no soporta geolocalización.</div>';
+    return;
+  }
+
+  navigator.geolocation.watchPosition(
+    async pos=>{
+      const {latitude:la,longitude:lo}=pos.coords;
+      document.getElementById('dot').classList.add('on');
+      document.getElementById('gtxt').textContent='Ubicación activa';
+      document.getElementById('sk').style.display='none';
+      document.getElementById('cont').style.display='block';
+
+      if(indiceActual>=murales.length){mostrarFinal();return;}
+
+      const m=murales[indiceActual];
+      const dist=Math.sqrt(Math.pow((la-m.lat)*111000,2)+Math.pow((lo-m.lng)*111000*Math.cos(la*Math.PI/180),2));
+
+      if(dist<=DIST_VOZ&&!vozDisparada&&!vozActiva){
+        vozDisparada=true;
+        leerTexto(m.guion,'🎙 Llegaste a: '+m.nombre);
+      }
+
+      if(renderActual!==indiceActual){
+        renderActual=indiceActual;
+        await mostrarMural(m,dist,la,lo);
+      } else {
+        const el=document.getElementById('dist-val');
+        if(el) el.textContent=Math.round(dist)+' metros';
+        if(marcadorUsuario) marcadorUsuario.setLatLng([la,lo]);
+      }
+    },
+    err=>{
+      document.getElementById('sk').style.display='none';
+      document.getElementById('cont').style.display='block';
+      document.getElementById('dot').classList.add('err');
+      const msgs={1:'Permiso denegado. Activa el GPS.',2:'Sin señal GPS.',3:'Tiempo agotado.'};
+      document.getElementById('gtxt').textContent='Error de ubicación';
+      document.getElementById('cont').innerHTML=`<div class="error"><strong>No se pudo detectar la ubicación</strong>${msgs[err.code]||'Error desconocido.'}</div>`;
+    },
+    {enableHighAccuracy:true,maximumAge:3000,timeout:10000}
+  );
+}
+
+// Si ya había avanzado antes, ir directo a la app
+if(indiceActual>0){
+  document.getElementById('pantalla-bienvenida').style.display='none';
+  document.getElementById('app').style.display='block';
+  iniciarGPS();
+}
 </script>
-
 </body>
 </html>
