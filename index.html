@@ -400,57 +400,46 @@ function iconoPaso(t){
   return'↑';
 }
 
-// BUG 2 FIX: usar OSRM (gratuito, sin API key, más confiable)
+// BUG 2 FIX: GraphHopper con perfil peatonal (más confiable en Colombia)
 async function obtenerRuta(uLa,uLo,mLa,mLo){
   try{
-    const url=`https://router.project-osrm.org/route/v1/foot/${uLo},${uLa};${mLo},${mLa}?overview=full&geometries=geojson&steps=true`;
+    const url=`https://graphhopper.com/api/1/route?point=${uLa},${uLo}&point=${mLa},${mLo}&profile=foot&locale=es&instructions=true&calc_points=true&key=LijBPDQGfu7Iiq80ebFCtWMuznIEmVeQBmEj0sP9JD8`;
     const r=await fetch(url);
     if(!r.ok) throw 0;
     const data=await r.json();
-    if(data.code!=='Ok'||!data.routes||!data.routes[0]) throw 0;
+    if(!data.paths||!data.paths[0]) throw 0;
     return data;
   }catch{return null;}
 }
 
 function dibujarRutaOSRM(data){
   capasRuta.forEach(c=>mapa.removeLayer(c));capasRuta=[];
-  const coords=data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+  const coords=data.paths[0].points.coordinates.map(c=>[c[1],c[0]]);
   const l=L.polyline(coords,{color:'#FF7A00',weight:5,opacity:.9}).addTo(mapa);
   capasRuta.push(l);
   mapa.fitBounds(l.getBounds(),{padding:[30,30]});
 }
 
 function mostrarPasosOSRM(data){
-  const route=data.routes[0];
-  const dist=route.distance||0;
-  const dur=Math.ceil((route.duration||0)/60);
+  const path=data.paths[0];
+  const dist=path.distance||0;
+  const dur=Math.ceil((path.time||0)/60000);
   document.getElementById('nav-dist').textContent=dist>=1000?(dist/1000).toFixed(1)+' km':Math.round(dist)+' m';
   document.getElementById('nav-dur').textContent=dur+' min';
-  const pasos=[];
-  (route.legs||[]).forEach(leg=>(leg.steps||[]).forEach(s=>pasos.push(s)));
-  document.getElementById('pasos-lista').innerHTML=pasos.map((p,i)=>{
-    const instr=(p.maneuver&&p.maneuver.type)?traducirPaso(p.maneuver.type,p.maneuver.modifier):'Continúa recto';
+  const instrucciones=path.instructions||[];
+  document.getElementById('pasos-lista').innerHTML=instrucciones.map((p,i)=>{
     const d=p.distance>=1000?(p.distance/1000).toFixed(1)+' km':Math.round(p.distance)+' m';
-    const ico=iconoPaso(p.maneuver&&p.maneuver.type?p.maneuver.type+' '+(p.maneuver.modifier||''):'');
-    return `<div class="paso ${i===0?'activo':''}"><div class="paso-ico">${ico}</div><div class="paso-txt"><strong>${instr}</strong><br><span style="font-size:.8rem;color:var(--muted)">${d}</span></div></div>`;
+    const ico=iconoPasoGH(p.sign);
+    return `<div class="paso ${i===0?'activo':''}"><div class="paso-ico">${ico}</div><div class="paso-txt"><strong>${p.text||'Continúa'}</strong><br><span style="font-size:.8rem;color:var(--muted)">${d}</span></div></div>`;
   }).join('');
 }
 
-function traducirPaso(tipo,mod){
-  if(tipo==='depart') return 'Empieza a caminar';
-  if(tipo==='arrive') return 'Has llegado a tu destino';
-  if(tipo==='turn'){
-    if(mod==='left') return 'Gira a la izquierda';
-    if(mod==='right') return 'Gira a la derecha';
-    if(mod==='slight left') return 'Gira levemente a la izquierda';
-    if(mod==='slight right') return 'Gira levemente a la derecha';
-    if(mod==='sharp left') return 'Gira bruscamente a la izquierda';
-    if(mod==='sharp right') return 'Gira bruscamente a la derecha';
-    if(mod==='uturn') return 'Da media vuelta';
-  }
-  if(tipo==='continue'||tipo==='new name') return 'Continúa recto';
-  if(tipo==='roundabout') return 'Toma la rotonda';
-  return 'Continúa';
+function iconoPasoGH(sign){
+  if(sign===-2||sign===-3) return '←';
+  if(sign===2||sign===3)   return '→';
+  if(sign===4)             return '📍';
+  if(sign===-7)            return '↻';
+  return '↑';
 }
 
 async function mostrarMural(m,dist,uLa,uLo){
