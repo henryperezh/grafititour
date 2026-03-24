@@ -318,8 +318,8 @@ let mapa=null, capasRuta=[], marcadorUsuario=null;
 let vozActiva=false, vozDisparada=false, renderActual=-1;
 let tourTerminado = false;
 
-// BUG 1 FIX: distancia reducida a 10 metros
-const DIST_VOZ = 10;
+// Distancia de activación: 7 metros (seguro para gama baja)
+const DIST_VOZ = 7;
 
 // ── BIENVENIDA ──
 function iniciarTour(){
@@ -659,10 +659,13 @@ function iniciarGPS(){
         Math.pow((lo-m.lng)*111000*Math.cos(la*Math.PI/180),2)
       );
 
-      // BUG 1 FIX: voz solo a 10 metros
+      // Vibración + voz al llegar al mural
       if(dist<=DIST_VOZ && !vozDisparada && !vozActiva){
         vozDisparada=true;
-        leerTexto(m.guion,'🎙 Llegaste a: '+m.nombre);
+        // Vibrar primero (3 pulsos)
+        if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+        // 1 segundo después arrancar la voz
+        setTimeout(()=>leerTexto(m.guion,'🎙 Llegaste a: '+m.nombre), 1000);
       }
 
       if(renderActual!==indiceActual){
@@ -686,12 +689,4 @@ function iniciarGPS(){
   );
 }
 
-// Si ya había avanzado antes, ir directo a la app
-if(indiceActual>0){
-  document.getElementById('pantalla-bienvenida').style.display='none';
-  document.getElementById('app').style.display='block';
-  iniciarGPS();
-}
-</script>
-</body>
-</html>
+// Si ya había avanzado antes, ir directo a 
