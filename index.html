@@ -848,9 +848,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .pasos-lista::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
   .leaflet-div-icon-clean{background:none!important;border:none!important;box-shadow:none!important;}
 	/* FORZAR PIES A GRIS OSCURO */
-.leaflet-marker-pane img,
-.leaflet-marker-pane svg,
-.leaflet-marker-pane path {
+/* FORZAR SOLO PIES A GRIS OSCURO */
+.leaflet-marker-pane .leaflet-div-icon {
   filter: grayscale(100%) brightness(0.3) !important;
 }
 </style>
