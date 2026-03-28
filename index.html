@@ -847,13 +847,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .pasos-lista::-webkit-scrollbar{width:4px;}
   .pasos-lista::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
   .leaflet-div-icon-clean{background:none!important;border:none!important;box-shadow:none!important;}
-	/* FORZAR PIES A GRIS OSCURO */
-/* FORZAR SOLO PIES A GRIS OSCURO */
-/* FORZAR TODO A NEGRO (INCLUYE LOS PIES) */
-.leaflet-marker-pane,
-.leaflet-marker-pane * {
-  filter: grayscale(100%) brightness(0) !important;
-}
 </style>
 </head>
 <body>
@@ -1073,23 +1066,10 @@ function lista(){
 }
 
 // ── MAPA ──
-const iM=()=>L.divIcon({html:`<div style="background:#55555;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,iconSize:[20,20],iconAnchor:[10,10],className:''});
+const iM=()=>L.divIcon({html:`<div style="background:#FF2D78;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,iconSize:[20,20],iconAnchor:[10,10],className:''});
 const iU=(angulo=0)=>L.divIcon({
-  html:`<div style="width:36px;height:36px;transform:rotate(${angulo}deg);filter:drop-shadow(0 2px 5px rgba(0,0,0,.7));">
-    <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-      <!-- Pie izquierdo -->
-      <ellipse cx="11" cy="10" rx="5" ry="7" fill="#7C3AFF" transform="rotate(-10,11,10)"/>
-      <ellipse cx="7"  cy="16" rx="2.5" ry="2" fill="#7C3AFF" transform="rotate(-10,7,16)"/>
-      <ellipse cx="10" cy="17" rx="2.5" ry="2" fill="#7C3AFF" transform="rotate(-10,10,17)"/>
-      <ellipse cx="13" cy="17" rx="2.5" ry="2" fill="#7C3AFF" transform="rotate(-10,13,17)"/>
-      <!-- Pie derecho (adelantado) -->
-      <ellipse cx="23" cy="20" rx="5" ry="7" fill="#FF2D78" transform="rotate(10,23,20)"/>
-      <ellipse cx="19" cy="26" rx="2.5" ry="2" fill="#FF2D78" transform="rotate(10,19,26)"/>
-      <ellipse cx="22" cy="27" rx="2.5" ry="2" fill="#FF2D78" transform="rotate(10,22,27)"/>
-      <ellipse cx="25" cy="27" rx="2.5" ry="2" fill="#FF2D78" transform="rotate(10,25,27)"/>
-    </svg>
-  </div>`,
-  iconSize:[36,36],iconAnchor:[18,18],className:'leaflet-div-icon-clean',popupAnchor:[0,-18]
+  html:`<div style="background:#1A0533;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
+  iconSize:[18,18],iconAnchor:[9,9],className:'',popupAnchor:[0,-9]
 });
 
 function iconoPaso(t){
@@ -1253,7 +1233,7 @@ async function dibujarRutaKML(uLa, uLo, mLat, mLng){
 }
 
 function dibujarLinea(coords){
-  const lPuntos=L.polyline(coords,{color:'#FF7A00',weight:5,opacity:.9,dashArray:'10 8'}).addTo(mapa);
+  const lPuntos=L.polyline(coords,{color:'#00E676',weight:5,opacity:.9,dashArray:'10 8'}).addTo(mapa);
   capasRuta.push(lPuntos);
 
   // Flechitas de dirección
@@ -1263,7 +1243,7 @@ function dibujarLinea(coords){
     const angle=Math.atan2(p2[1]-p1[1],p2[0]-p1[0])*(180/Math.PI);
     const mid=[(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
     const arrow=L.divIcon({
-      html:`<div style="font-size:14px;transform:rotate(${angle-90}deg);line-height:1;color:#FF7A00;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">➤</div>`,
+      html:`<div style="font-size:14px;transform:rotate(${angle-90}deg);line-height:1;color:#00E676;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">➤</div>`,
       iconSize:[14,14],iconAnchor:[7,7],className:'leaflet-div-icon-clean'
     });
     capasRuta.push(L.marker(mid,{icon:arrow,interactive:false}).addTo(mapa));
