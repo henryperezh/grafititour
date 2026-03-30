@@ -1319,10 +1319,21 @@ async function dibujarRutaKML(uLa, uLo, mLat, mLng){
 }
 
 function dibujarLinea(coords){
-  // línea verde eliminada
-  if(coords.length>=2){
-    const bounds=L.latLngBounds(coords);
-    mapa.fitBounds(bounds,{padding:[30,30]});
+  if(coords.length<2) return;
+
+  // Flechitas naranjas pequeñas a lo largo de la línea recta
+  const p1=coords[0], p2=coords[coords.length-1];
+  const angle=Math.atan2(p2[1]-p1[1], p2[0]-p1[0])*(180/Math.PI);
+  const pasos=6;
+  for(let i=1;i<pasos;i++){
+    const t=i/pasos;
+    const lat=p1[0]+(p2[0]-p1[0])*t;
+    const lng=p1[1]+(p2[1]-p1[1])*t;
+    const arrow=L.divIcon({
+      html:`<div style="font-size:11px;transform:rotate(${angle-90}deg);line-height:1;color:#FF7A00;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))">➤</div>`,
+      iconSize:[11,11],iconAnchor:[5,5],className:'leaflet-div-icon-clean'
+    });
+    capasRuta.push(L.marker([lat,lng],{icon:arrow,interactive:false}).addTo(mapa));
   }
 }
 
@@ -1348,17 +1359,13 @@ async function mostrarMural(m,dist,uLa,uLo){
         <div class="nav-stat"><div class="nav-stat-val" id="nav-dist">~${Math.round(dist)} m</div><div class="nav-stat-lbl">distancia</div></div>
         <div class="nav-stat"><div class="nav-stat-val" id="nav-dur">...</div><div class="nav-stat-lbl">caminando</div></div>
       </div>
-      <div id="map" style="width:100%;height:280px"></div>
-      <div class="pasos-wrap">
-        <div class="pasos-titulo">Instrucciones paso a paso</div>
-        <div class="pasos-lista" id="pasos-lista"><div class="ruta-loading"><span>⟳</span>Calculando ruta...</div></div>
-      </div>
+      <div id="map" style="width:100%;height:380px"></div>
     </div>`;
 
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const el=document.getElementById('map');
   if(!el)return;
-  el.style.height='280px';el.style.width='100%';
+  el.style.height='380px';el.style.width='100%';
   if(mapa){mapa.remove();mapa=null;capasRuta=[];}
   // Desactivar iconos por defecto de Leaflet para evitar "access blocked"
   delete L.Icon.Default.prototype._getIconUrl;
@@ -1373,7 +1380,15 @@ async function mostrarMural(m,dist,uLa,uLo){
   mapa.invalidateSize();
   L.marker([m.lat,m.lng],{icon:iM()}).bindTooltip(m.nombre).addTo(mapa);
   marcadorUsuario=L.marker([uLa,uLo],{icon:iU(typeof hdg!=='undefined'&&hdg!==null?hdg:0)}).bindTooltip('Tú estás aquí').addTo(mapa);
-  mapa.fitBounds([[uLa,uLo],[m.lat,m.lng]],{padding:[30,30]});
+
+  // Vista orientada: mural arriba, turista abajo
+  // Calculamos el centro desplazado un 20% hacia el mural
+  const cLat = uLa + (m.lat - uLa) * 0.7;
+  const cLng = uLo + (m.lng - uLo) * 0.5;
+  // Zoom basado en distancia
+  const distM = Math.sqrt(Math.pow((uLa-m.lat)*111000,2)+Math.pow((uLo-m.lng)*111000*Math.cos(uLa*Math.PI/180),2));
+  const zoom = distM < 50 ? 19 : distM < 120 ? 18 : distM < 250 ? 17 : 16;
+  mapa.setView([cLat, cLng], zoom);
   setTimeout(()=>{if(mapa)mapa.invalidateSize();},400);
 
   // Ruta peatonal real por calles (OSRM) con fallback offline
