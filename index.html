@@ -1026,7 +1026,7 @@ function iniciarTour(){
 function reiniciarTour(){
   localStorage.removeItem('vijes_indice');
   indiceActual=0; tourTerminado=false;
-  renderActual=-1; vozDisparada=false; vozDobleDisparada=false; vozDoble56Disparada=false;
+  renderActual=-1; vozDisparada=false; vozDobleDisparada=false; vozDoble56Disparada=false; vozEncadenada=false;
   iniciarTour();
 }
 
@@ -1041,8 +1041,11 @@ function obtenerVozFemenina(){
   return null;
 }
 
+let vozEncadenada=false; // true mientras se ejecuta una secuencia de 2 guiones
+
 function leerTexto(texto,etiqueta){
   if(!window.speechSynthesis)return;
+  if(vozEncadenada)return; // no interrumpir una cadena en curso
   window.speechSynthesis.cancel();
   const utt=new SpeechSynthesisUtterance(texto);
   utt.lang='es-CO';utt.rate=0.92;utt.pitch=1.1;
@@ -1056,7 +1059,47 @@ function leerTexto(texto,etiqueta){
   window.speechSynthesis.speak(utt);
 }
 
+// Encadena dos guiones: espera onend real del primero antes de iniciar el segundo
+function leerTextoEncadenado(texto1, etiqueta1, texto2, etiqueta2){
+  if(!window.speechSynthesis) return;
+  vozEncadenada=true;
+  window.speechSynthesis.cancel();
+
+  const utt1 = new SpeechSynthesisUtterance(texto1);
+  utt1.lang='es-CO'; utt1.rate=0.92; utt1.pitch=1.1;
+  const asignar1=()=>{const v=obtenerVozFemenina();if(v)utt1.voice=v;};
+  asignar1();
+  if(!window.speechSynthesis.getVoices().length) window.speechSynthesis.onvoiceschanged=asignar1;
+  vozActiva=true;
+  document.getElementById('voz-banner').classList.add('activo');
+  document.getElementById('voz-txt').textContent=etiqueta1||'Leyendo...';
+
+  utt1.onend=()=>{
+    setTimeout(()=>{
+      if(!window.speechSynthesis){vozEncadenada=false;return;}
+      const utt2 = new SpeechSynthesisUtterance(texto2);
+      utt2.lang='es-CO'; utt2.rate=0.92; utt2.pitch=1.1;
+      const asignar2=()=>{const v=obtenerVozFemenina();if(v)utt2.voice=v;};
+      asignar2();
+      document.getElementById('voz-txt').textContent=etiqueta2||'Leyendo...';
+      utt2.onend=utt2.onerror=()=>{
+        vozEncadenada=false;
+        vozActiva=false;
+        document.getElementById('voz-banner').classList.remove('activo');
+      };
+      window.speechSynthesis.speak(utt2);
+    }, 1000);
+  };
+  utt1.onerror=()=>{
+    vozEncadenada=false;
+    vozActiva=false;
+    document.getElementById('voz-banner').classList.remove('activo');
+  };
+  window.speechSynthesis.speak(utt1);
+}
+
 function pararVoz(){
+  vozEncadenada=false;
   window.speechSynthesis.cancel();
   vozActiva=false;
   document.getElementById('voz-banner').classList.remove('activo');
@@ -1523,10 +1566,13 @@ function iniciarGPS(){
           vozDobleDisparada=true;
           vozDisparada=true;
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
-          // Voz mural 1, luego 1 segundo después voz mural 2
-          setTimeout(()=>leerTexto(murales[0].guion,'🎙 Llegaste a: '+murales[0].nombre), 1000);
-          const duracion1 = murales[0].guion.length * 60; // estimado en ms (~60ms por caracter a 0.92x)
-          setTimeout(()=>leerTexto(murales[1].guion,'🎙 '+murales[1].nombre), 1000 + duracion1);
+          // Esperar 1s, leer mural 1, y al terminar esperar 1s más para leer mural 2
+          setTimeout(()=>{
+            leerTextoEncadenado(
+              murales[0].guion, '🎙 Llegaste a: '+murales[0].nombre,
+              murales[1].guion, '🎙 '+murales[1].nombre
+            );
+          }, 1000);
         }
       }
 
@@ -1540,9 +1586,12 @@ function iniciarGPS(){
           vozDoble56Disparada=true;
           vozDisparada=true;
           if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
-          setTimeout(()=>leerTexto(murales[4].guion,'🎙 Llegaste a: '+murales[4].nombre), 1000);
-          const duracion5 = murales[4].guion.length * 60;
-          setTimeout(()=>leerTexto(murales[5].guion,'🎙 '+murales[5].nombre), 1000 + duracion5);
+          setTimeout(()=>{
+            leerTextoEncadenado(
+              murales[4].guion, '🎙 Llegaste a: '+murales[4].nombre,
+              murales[5].guion, '🎙 '+murales[5].nombre
+            );
+          }, 1000);
         }
       }
 
