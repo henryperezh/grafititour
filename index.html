@@ -1363,7 +1363,7 @@ function dibujarLinea(coords){
   const p1=coords[0], p2=coords[coords.length-1];
   // FIX Bug 3: corregir orden de argumentos en atan2 para lat/lng (coords=[lat,lng])
   const angle=Math.atan2(p2[0]-p1[0], p2[1]-p1[1])*(180/Math.PI);
-  const pasos=6;
+  const pasos=12;
   for(let i=1;i<pasos;i++){
     const t=i/pasos;
     const lat=p1[0]+(p2[0]-p1[0])*t;
@@ -1646,7 +1646,7 @@ function iniciarGPS(){
         }
       }
 
-      // Activación normal para todos los demás murales (excluye 1 y 5 que tienen lógica doble)
+      // Activación normal para todos los demás murales (excluye 1 y 5 que tienen lógica doble, pero incluye 2 y 6)
       if(indiceActual>0 && indiceActual!==4 && dist<=DIST_VOZ && !vozDisparada && !vozActiva){
         vozDisparada=true;
         if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
