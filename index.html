@@ -1421,18 +1421,13 @@ async function mostrarMural(m,dist,uLa,uLo){
       </div>
     </div>
     <div class="nav-card">
-      <div class="nav-header"><span class="nav-title">🚶 Ruta a pie</span><span class="nav-badge">sin salir de la app</span></div>
-      <div class="nav-info">
-        <div class="nav-stat"><div class="nav-stat-val" id="nav-dist">~${Math.round(dist)} m</div><div class="nav-stat-lbl">distancia</div></div>
-        <div class="nav-stat"><div class="nav-stat-val" id="nav-dur">...</div><div class="nav-stat-lbl">caminando</div></div>
-      </div>
-      <div id="map" style="width:100%;height:380px"></div>
+      <div id="map" style="width:100%;height:480px"></div>
     </div>`;
 
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const el=document.getElementById('map');
   if(!el)return;
-  el.style.height='380px';el.style.width='100%';
+  el.style.height='480px';el.style.width='100%';
   if(mapa){mapa.remove();mapa=null;capasRuta=[];capasNaranja=[];}
   // Desactivar iconos por defecto de Leaflet para evitar "access blocked"
   delete L.Icon.Default.prototype._getIconUrl;
