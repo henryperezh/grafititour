@@ -1048,9 +1048,10 @@ function leerTexto(texto,etiqueta){
   utt.onend=()=>{
     vozActiva=false;
     document.getElementById('voz-banner').classList.remove('activo');
+    resetBtnEsc();
     setTimeout(avanzarSiguiente, 1000);
   };
-  utt.onerror=()=>{vozActiva=false;document.getElementById('voz-banner').classList.remove('activo');};
+  utt.onerror=()=>{vozActiva=false;document.getElementById('voz-banner').classList.remove('activo');resetBtnEsc();};
   window.speechSynthesis.speak(utt);
 }
 
@@ -1144,6 +1145,16 @@ function escucharMural(num){
     leerTexto(murales[num-1].guion,'🎙 '+murales[num-1].nombre);
   }
 }
+function toggleEscuchar(num){
+  const btn=document.getElementById('btn-esc');
+  if(vozActiva){
+    pararVoz();
+    if(btn) btn.textContent='🎙 Escuchar';
+  } else {
+    escucharMural(num);
+    if(btn) btn.textContent='⏹ Detener';
+  }
+}
 function reproducirAudioMural(audioSrc, etiqueta){
   pararVoz();
   vozActiva=true;
@@ -1153,14 +1164,20 @@ function reproducirAudioMural(audioSrc, etiqueta){
   audio.onended = ()=>{
     vozActiva=false;
     document.getElementById('voz-banner').classList.remove('activo');
+    resetBtnEsc();
     setTimeout(avanzarSiguiente, 1000);
   };
   audio.onerror = ()=>{
     vozActiva=false;
     document.getElementById('voz-banner').classList.remove('activo');
+    resetBtnEsc();
   };
   audio.play();
   window._audioActual = audio;
+}
+function resetBtnEsc(){
+  const b=document.getElementById('btn-esc');
+  if(b) b.textContent='🎙 Escuchar';
 }
 function pararVoz(){
   vozEncadenada=false;
@@ -1168,6 +1185,7 @@ function pararVoz(){
   if(window._audioActual){window._audioActual.pause();window._audioActual=null;}
   vozActiva=false;
   document.getElementById('voz-banner').classList.remove('activo');
+  resetBtnEsc();
 }
 
 
@@ -1416,7 +1434,7 @@ async function mostrarMural(m,dist,uLa,uLo){
       </div>
       <div class="card-body">
         <div class="btn-row" style="gap:10px;margin-bottom:0;">
-          <button class="btn-escuchar" style="width:50%;margin-bottom:0;font-size:.88rem;padding:11px 6px;" onclick="escucharMural(${m.num})">🎙 Escuchar</button>
+          <button class="btn-escuchar" style="width:50%;margin-bottom:0;font-size:.88rem;padding:11px 6px;" onclick="toggleEscuchar(${m.num})" id="btn-esc">🎙 Escuchar</button>
           <button class="btn btn-v" style="width:50%;font-size:.88rem;padding:11px 6px;" onclick="marcarVisitado()">✓ Ya lo visité</button>
         </div>
       </div>
@@ -1588,9 +1606,11 @@ function mostrarFinal(){
           </div>
           <button class="btn-enviar" onclick="enviarEncuesta()">Enviar respuestas ✓</button>
         </div>
-        <div class="gracias" id="enc-gracias" style="display:none">
-          <div class="ge">🙏</div>
-          <p><strong>¡Gracias por tu respuesta!</strong><br>Tu opinión nos ayuda a mejorar el recorrido y seguir celebrando la historia viva de Vijes.</p>
+        <div class="gracias" id="enc-gracias" style="display:none;padding:32px 20px 40px;">
+          <div class="ge" style="font-size:3.5rem;margin-bottom:16px;">🙏</div>
+          <p style="font-size:1.2rem;font-weight:800;color:#fff;margin-bottom:10px;">¡Gracias por participar!</p>
+          <p style="font-size:.97rem;color:rgba(255,255,255,.75);line-height:1.7;">Tu opinión nos ayuda a mejorar el recorrido y seguir celebrando la historia viva de Vijes.</p>
+          <p style="margin-top:24px;font-size:2rem;">🎨</p>
         </div>
       </div>
     </div>`;
@@ -1618,17 +1638,15 @@ function enviarEncuesta(){
     recomienda: document.querySelector('#recomienda .opcion.sel')?.textContent||''
   };
   console.log('Encuesta Grafiti Tour Vijes:', datos);
-  // Ocultar form, mostrar gracias
+  // Parar voz
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(window._audioActual){window._audioActual.pause();window._audioActual=null;}
+  // Mostrar pantalla de agradecimiento
   document.getElementById('enc-body').style.display='none';
   document.getElementById('enc-gracias').style.display='block';
-  // Limpiar progreso para próxima persona
+  // Limpiar progreso
   localStorage.removeItem('vijes_indice');
   indiceActual=0; tourTerminado=false;
-  // Volver a pantalla de bienvenida tras 3 segundos
-  setTimeout(()=>{
-    document.getElementById('app').style.display='none';
-    document.getElementById('pantalla-bienvenida').style.display='flex';
-  }, 3000);
 }
 
 // ── GPS ──
