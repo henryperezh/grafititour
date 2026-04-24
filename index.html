@@ -925,7 +925,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       </div>
     </div>
   </header>
-  <div class="gps"><div class="dot" id="dot"></div><span id="gtxt">Detectando ubicación...</span></div>
+
   <div class="voz-banner" id="voz-banner">
     <div class="voz-onda"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="voz-txt" id="voz-txt">Leyendo...</div>
@@ -934,7 +934,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <main>
     <div class="sk-wrap" id="sk"><div class="sk s"></div><div class="sk m"></div><div class="sk l"></div><div class="sk" style="width:70%"></div></div>
     <div id="cont" style="display:none"></div>
-    <div id="sec" style="display:none"><div class="stit">Recorrido completo</div><div class="lista" id="lst"></div></div>
+  
   </main>
 </div>
 
@@ -1181,7 +1181,8 @@ function progreso(){
 }
 
 function lista(){
-  document.getElementById('lst').innerHTML=murales.map((m,i)=>{
+  const lstEl=document.getElementById('lst'); if(!lstEl) return;
+  lstEl.innerHTML=murales.map((m,i)=>{
     const vis=i<indiceActual, act=i===indiceActual&&!tourTerminado;
     return `<div class="item ${vis?'v':act?'ai':''}">
       <span class="n">${String(m.num).padStart(2,'0')}</span>
@@ -1191,8 +1192,6 @@ function lista(){
     </div>`;
   }).join('');
 }
-
-// ── MAPA ──
 const iM=()=>L.divIcon({
   html:`<div style="width:26px;height:26px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))">
     <svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
@@ -1417,8 +1416,6 @@ async function mostrarMural(m,dist,uLa,uLo){
         <div class="card-art">${m.artista}</div>
       </div>
       <div class="card-body">
-        <p class="card-desc">${m.desc}</p>
-        <div class="dist">📍 A unos <strong style="margin-left:5px" id="dist-val">${Math.round(dist)} metros</strong></div>
         <button class="btn-escuchar" onclick="escucharMural(${m.num})">🎙 Escuchar información del mural</button>
         <div class="btn-row"><button class="btn btn-v" onclick="marcarVisitado()">✓ Ya lo visité</button></div>
       </div>
@@ -1636,7 +1633,7 @@ function enviarEncuesta(){
 // ── GPS ──
 function iniciarGPS(){
   progreso(); lista();
-  document.getElementById('sec').style.display='block';
+  
   if(window.speechSynthesis){
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
@@ -1645,8 +1642,8 @@ function iniciarGPS(){
   if(!navigator.geolocation){
     document.getElementById('sk').style.display='none';
     document.getElementById('cont').style.display='block';
-    document.getElementById('dot').classList.add('err');
-    document.getElementById('gtxt').textContent='GPS no disponible';
+    
+    
     document.getElementById('cont').innerHTML='<div class="error"><strong>GPS no disponible</strong>Tu dispositivo no soporta geolocalización.</div>';
     return;
   }
@@ -1656,8 +1653,8 @@ function iniciarGPS(){
     if(document.getElementById('sk').style.display !== 'none') {
       document.getElementById('sk').style.display='none';
       document.getElementById('cont').style.display='block';
-      document.getElementById('dot').classList.add('err');
-      document.getElementById('gtxt').textContent='GPS lento — activa la ubicación';
+      
+      
       document.getElementById('cont').innerHTML=`
         <div class="error">
           <strong>El GPS está tardando</strong>
@@ -1671,8 +1668,8 @@ function iniciarGPS(){
       clearTimeout(gpsTimeout);
       const {latitude:la,longitude:lo,heading:hdg}=pos.coords;
       ultimaLat=la; ultimaLng=lo; // guardar siempre la última posición
-      document.getElementById('dot').classList.add('on');
-      document.getElementById('gtxt').textContent='Ubicación activa';
+      
+      
       document.getElementById('sk').style.display='none';
       document.getElementById('cont').style.display='block';
 
@@ -1728,9 +1725,9 @@ function iniciarGPS(){
       clearTimeout(gpsTimeout);
       document.getElementById('sk').style.display='none';
       document.getElementById('cont').style.display='block';
-      document.getElementById('dot').classList.add('err');
+      
       const msgs={1:'Permiso denegado. Activa el GPS.',2:'Sin señal GPS.',3:'Tiempo agotado.'};
-      document.getElementById('gtxt').textContent='Error de ubicación';
+      
       document.getElementById('cont').innerHTML=`<div class="error"><strong>No se pudo detectar la ubicación</strong>${msgs[err.code]||'Error desconocido.'}</div>`;
     },
     {enableHighAccuracy:true,maximumAge:3000,timeout:10000}
