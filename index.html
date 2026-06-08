@@ -1017,6 +1017,9 @@ const DIST_VOZ = 8;
 
 // ── BIENVENIDA ──
 function iniciarTour(){
+  // Desbloquear audio en iOS con gesto del usuario
+  const silencio = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+  silencio.play().catch(()=>{});
   document.getElementById('pantalla-bienvenida').style.display='none';
   document.getElementById('app').style.display='block';
   iniciarGPS();
@@ -1177,6 +1180,8 @@ function reproducirAudioMural(audioSrc, etiqueta){
   document.getElementById('voz-banner').classList.add('activo');
   document.getElementById('voz-txt').textContent=etiqueta||'Reproduciendo...';
   const audio = new Audio(audioSrc);
+  if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+  setTimeout(()=>{ audio.play(); window._audioActual = audio; }, 3000);
   audio.onended = ()=>{
     vozActiva=false;
     document.getElementById('voz-banner').classList.remove('activo');
@@ -1188,8 +1193,6 @@ function reproducirAudioMural(audioSrc, etiqueta){
     document.getElementById('voz-banner').classList.remove('activo');
     resetBtnEsc();
   };
-  audio.play();
-  window._audioActual = audio;
 }
 function resetBtnEsc(){
   const b=document.getElementById('btn-esc');
@@ -1722,7 +1725,6 @@ function iniciarGPS(){
       // Activación de voz al llegar a cualquier mural
       if(dist<=DIST_VOZ && !vozDisparada && !vozActiva){
         vozDisparada=true;
-        if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
         setTimeout(()=>escucharMural(m.num), 1000);
       }
 
